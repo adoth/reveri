@@ -1,12 +1,14 @@
 import wx
 import itertools
-import computer_put
+import put_computer
 import bord
+
 
 eight_directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
 black = 'black'
 white = 'white'
 green = 'green'
+N = 100
 
 
 class Reversi(bord.MainFrame):
@@ -16,7 +18,7 @@ class Reversi(bord.MainFrame):
         self.start_button.Bind(wx.EVT_BUTTON, self.reset_setting)
         self.redo_button.Bind(wx.EVT_BUTTON, self.redo)
         self.pass_button.Bind(wx.EVT_BUTTON, self.pass_turn)
-        self.monte = self.redo_bord = [[self.get_square_color((i, j)) for i in range(10)] for j in range(10)]
+        self.monte = self.redo_bord = None
         self.n = 4
         for i, j in itertools.product(range(10), repeat=2):
             self.square_array[i][j].Bind(wx.EVT_LEFT_UP, self.on_bord_click)
@@ -26,6 +28,7 @@ class Reversi(bord.MainFrame):
         obj = event.GetEventObject()
         pos = obj.pos_index
         if self.put_stone(pos):
+            print('player put on : {} {}'.format(pos[0] + 1, pos[1] + 1))
             if not self.end_dialog():
                 self.change_color()
                 self.monte = [[self.get_square_color((i, j)) for i in range(10)] for j in range(10)]
@@ -34,19 +37,19 @@ class Reversi(bord.MainFrame):
                 self.change_color()
 
     def put_computer(self):
-        # if self.n < 50:
-        #     put_pos = monte.random_put(self.monte, self.now_color)
-        # else:
-        put_pos = computer_put.monte(self.monte, self.now_color, self.n)
+        put_pos = put_computer.main(self.monte, self.now_color, self.n)
         if put_pos:
-            # print('computer put on : {} {}'.format(put_pos[0]+1, put_pos[1]+1))
-            self.put_stone(put_pos)
+            self.n += 1
+            for pos in put_pos:
+                self.set_square_color(pos, self.now_color, put=True)
         elif not put_pos:
             box = wx.MessageDialog(None, 'computer pss', 'pass', wx.OK)
-            box.ShowModal()
+            box.Show(True)
+        self.Show(True)
 
     def put_stone(self, pos):
         rev_block = self.get_rev_block((pos[0], pos[1]))
+        # print(rev_block)
         if rev_block:
             self.set_square_color((pos[0], pos[1]), self.now_color, put=True)
             for rev in rev_block:
@@ -59,21 +62,20 @@ class Reversi(bord.MainFrame):
         enemy_color = [white, black][self.now_color == white]
         rev_block = []
         for direction in eight_directions:
-            enemy_block = []
             square = self.get_square_color(pos, direction=direction)
             if square == enemy_color:
-                enemy_block.append((pos[0]+direction[0], pos[1]+direction[1]))
-                rev_block.append(self.sandwich((pos[0]+direction[0], pos[1]+direction[1]), direction, enemy_block))
+                rev_block.append(self.sandwich((pos[0]+direction[0], pos[1]+direction[1]), direction))
             else:
                 continue
         rev_block = [i for j in rev_block for i in j]
         return rev_block
 
-    def sandwich(self, pos, direction, enemy_block) -> list:
+    def sandwich(self, pos, direction) -> list:
+        enemy_block = [pos]
         for i in range(1, 10):
             square = (pos[0] + direction[0]*i, pos[1] + direction[1]*i)
             square_color = self.get_square_color(square)
-            if square_color == green or not (0 <= square[0] < 10) or not(0 <= square[1] < 10):
+            if square_color == green or square_color == 'none':
                 break
             elif square_color == self.now_color:
                 return enemy_block
@@ -103,9 +105,11 @@ class Reversi(bord.MainFrame):
         self.now_color = black
 
         if self.first_player == 'Computer' and self.second_player == 'Computer':
+            self.monte = [[self.get_square_color((i, j)) for i in range(10)] for j in range(10)]
             while True:
                 self.put_computer()
                 self.change_color()
+                self.monte = [[self.get_square_color((i, j)) for i in range(10)] for j in range(10)]
                 if self.end_dialog():
                     break
         elif self.first_player == 'Computer':
