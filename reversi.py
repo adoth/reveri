@@ -14,6 +14,9 @@ N = 100
 class Reversi(bord.MainFrame):
     def __init__(self):
         super().__init__()
+        timer = wx.Timer(self)
+        self.conVScon = False
+        self.timer = timer
         self.radio_box.Bind(wx.EVT_RADIOBOX, self.get_radio_box_selection)
         self.start_button.Bind(wx.EVT_BUTTON, self.reset_setting)
         self.redo_button.Bind(wx.EVT_BUTTON, self.redo)
@@ -22,6 +25,7 @@ class Reversi(bord.MainFrame):
         self.n = 4
         for i, j in itertools.product(range(10), repeat=2):
             self.square_array[i][j].Bind(wx.EVT_LEFT_UP, self.on_bord_click)
+        self.Bind(wx.EVT_TIMER, self.OnTimer)
 
     def on_bord_click(self, event):
         self.redo_bord = [[self.get_square_color((i, j)) for i in range(10)] for j in range(10)]
@@ -32,9 +36,16 @@ class Reversi(bord.MainFrame):
             if not self.end_dialog():
                 self.change_color()
                 self.monte = [[self.get_square_color((i, j)) for i in range(10)] for j in range(10)]
-                self.put_computer()
-                self.end_dialog()
-                self.change_color()
+                self.timer.Start()
+
+    def OnTimer(self, event):
+        self.monte = [[self.get_square_color((i, j)) for i in range(10)] for j in range(10)]
+        self.put_computer()
+        self.change_color()
+        if not self.conVScon or len(set([self.get_square_color((i, j)) for i, j in itertools.product(range(10), repeat=2)])) <= 2:
+            self.timer.Stop()
+            self.end_dialog()
+        self.Refresh()
 
     def put_computer(self):
         put_pos = put_computer.main(self.monte, self.now_color, self.n)
@@ -49,7 +60,6 @@ class Reversi(bord.MainFrame):
 
     def put_stone(self, pos):
         rev_block = self.get_rev_block((pos[0], pos[1]))
-        # print(rev_block)
         if rev_block:
             self.set_square_color((pos[0], pos[1]), self.now_color, put=True)
             for rev in rev_block:
@@ -106,12 +116,8 @@ class Reversi(bord.MainFrame):
 
         if self.first_player == 'Computer' and self.second_player == 'Computer':
             self.monte = [[self.get_square_color((i, j)) for i in range(10)] for j in range(10)]
-            while True:
-                self.put_computer()
-                self.change_color()
-                self.monte = [[self.get_square_color((i, j)) for i in range(10)] for j in range(10)]
-                if self.end_dialog():
-                    break
+            self.conVScon = True
+            self.timer.Start(1)
         elif self.first_player == 'Computer':
             self.put_stone((6, 5))
             self.now_color = white

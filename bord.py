@@ -1,4 +1,5 @@
 import wx
+import numpy as np
 import itertools
 
 black = 'black'
@@ -19,13 +20,13 @@ class MainFrame(wx.Frame):
         return_btm = SubPanel(self, pos=(760, 600), size=(200, 100))
         pass_btm = SubPanel(self, pos=(760, 700), size=(200, 100))
 
-        square_array = [[None for _ in range(10)] for _ in range(10)]
+        square_array = np.array([[None] * 10] * 10)
         self.square_array = square_array
-        square_layout = [[0 for _ in range(10)] for _ in range(10)]
+        square_layout = np.array([[None] * 10] * 10)
         self.square_layout = square_layout
 
         radio_box = wx.RadioBox(radio_panel, wx.ID_ANY, '先行・後攻',
-                                choices=('先行:黒', '後攻:白'), style=wx.RA_SPECIFY_ROWS)
+                                choices=('先行:黒', '後攻:白', 'その他'), style=wx.RA_SPECIFY_ROWS)
         self.radio_box = radio_box
         start_button = wx.Button(start_btm, wx.ID_ANY, 'START')
         self.start_button = start_button
@@ -42,8 +43,13 @@ class MainFrame(wx.Frame):
 
         # create bord
         for i, j in itertools.product(range(10), repeat=2):
-                square_array[i][j] = VanillaBord(bord, (i, j), (76 * i, 76 * j))
-                self.set_square_color((i, j), green, put=True)
+            square_array[i][j] = VanillaBord(bord, (i, j), (76 * i, 76 * j))
+            self.set_square_color((i, j), green, put=True)
+            stext = wx.StaticText(square_array[i][j], wx.ID_ANY, "(" + str(i+1) + ", " + str(j+1) + ")")
+            stext.SetForegroundColour("#999999")
+            square_layout[i][j] = wx.BoxSizer(wx.VERTICAL)
+            square_layout[i][j].Add(stext)
+            square_array[i][j].SetSizer(square_layout[i][j])
         self.bord_color = None
 
     def set_square_color(self, pos,  color, *, direction=(0, 0), put):
@@ -60,7 +66,7 @@ class MainFrame(wx.Frame):
         if 0 <= pos[0] + direction[0] < 10 and 0 <= pos[1] + direction[1] < 10:
             color = self.square_array[pos[0] + direction[0]][pos[1] + direction[1]].color
         else:
-            color = "none"
+            color = 'none'
         return color
 
 

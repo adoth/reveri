@@ -80,13 +80,11 @@ class Monte:
         if 0 <= pos[0] + direction[0] < 10 and 0 <= pos[1] + direction[1] < 10:
             color = self.square_array[pos[0] + direction[0]][pos[1] + direction[1]]
         else:
-            color = "none"
+            color = 'none'
         return color
 
 
 def monte(bord, color, n, can_put):
-    print(can_put)
-    start = time()
     start_color = color
     enemy_color = [black, white][start_color == black]
     ans = []
@@ -101,10 +99,9 @@ def monte(bord, color, n, can_put):
             result = [i for j in result for i in j]
             win += [0, 1][result.count(start_color) > result.count(enemy_color)]
             tmp_bord = Monte(put_bord, now_color)
+
         ans.append(win / even)
 
-    print(ans)
-    print(time() - start)
     return can_put[ans.index(max(ans))]
 
 
@@ -124,5 +121,5 @@ def main(bord, color, n):
         pos = danger_minus[0]
     else:
         pos = monte(bord, color, n, list(danger_minus))
-    print(pos)
+    print(pos[0]+1, pos[1]+1)
     return can_dic[pos]
